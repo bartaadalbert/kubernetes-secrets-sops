@@ -2,7 +2,7 @@ resource "null_resource" "encrypt_secrets" {
   for_each = var.secrets
 
   triggers = {
-    secret_content = each.value
+    secret_content = each.value["secret_content"]
     file_content   = local_file.secret_enc_file[each.key].content
   }
 
