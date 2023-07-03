@@ -3,12 +3,12 @@ resource "null_resource" "encrypt_secrets" {
 
   triggers = {
     secret_content = each.value
+    file_content   = local_file.secret_enc_file[each.key].content
   }
 
   provisioner "local-exec" {
     command     = "sops -e --gcp-kms projects/${var.gcp_project}/locations/global/keyRings/${var.kms_key_ring}/cryptoKeys/${var.kms_crypto_key} --encrypted-regex '^(.*)$' ${local_file.secret_enc_file[each.key].filename}"
     interpreter = ["bash", "-c"]
-    depends_on = [local_file.secret_enc_file[each.key]]
   }
 }
 
