@@ -30,15 +30,7 @@ variable "kms_crypto_key" {
 variable "secrets" {
   description = "Map of secret names and key-value pairs"
   type        = map(map(string))
-  default     = {
-    myapp = {
-      token  = "my-secret-token"
-      apiKey = "my-api-key"
-    }
-    database = {
-      dbpassword = "my-database-password"
-    }
-  }
+  default     = {}
 }
 
 variable "sops_version" {

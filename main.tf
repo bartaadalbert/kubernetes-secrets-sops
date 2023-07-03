@@ -20,9 +20,7 @@ resource "kubernetes_secret" "secrets" {
     namespace = var.namespace
   }
 
-  data = {
-    "encrypted-secret.yaml" = null_resource.encrypt_secrets[each.key].id
-  }
+  data = each.value
 }
 
 resource "local_file" "secret_enc_file" {
