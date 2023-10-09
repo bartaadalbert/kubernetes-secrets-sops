@@ -1,18 +1,35 @@
-variable "secret_name" {
-  description = "The name of the secret"
-  type        = string
-  default     = "kbot"
-}
-
+#------------kubernetes settings-------
 variable "namespace" {
   description = "The namespace in which to create the secret"
   type        = string
   default     = "demo"
 }
 
+variable "secrets" {
+  description = "Map of secret names and key-value pairs"
+  type        = map(map(string))
+  default     = {
+    secret1 = {
+      key1 = "value1"
+      key2 = "value2"
+    }
+    secret2 = {
+      key1 = "value1"
+      key2 = "value2"
+    }
+  }
+}
+#--------End kubernetes settings----------
+
+
+
+
+
+#-------Begin GCP settings----------
 variable "gcp_project" {
   description = "The GCP project ID"
   type        = string
+  default     = "devops"
 }
 
 variable "kms_key_ring" {
@@ -26,27 +43,41 @@ variable "kms_crypto_key" {
   type        = string
   default     = "sops-key-flux-1"
 }
+#------------END GCP GOOGLE settings--------
 
-variable "secrets" {
-  description = "Map of secret names and key-value pairs"
-  type        = map(map(string))
-  default     = {}
+
+
+
+
+#----------GPG settings--------
+
+variable "generate_gpg_key" {
+  description = "Set to false to not generate a GPG key pair."
+  default     = true
 }
 
-variable "sops_version" {
-  description = "The version of SOPS to download"
+variable "name_real" {
+  description = "The GPG name"
   type        = string
-  default     = "v3.7.3"
+  default     = "devops"
 }
 
-variable "sops_os" {
-  description = "The target operating system for SOPS"
+variable "gpg_fingerprint" {
+  description = "GPG key id"
   type        = string
-  default     = "linux"
+  default     = "my@my.local"
 }
 
-variable "sops_arch" {
-  description = "The target architecture for SOPS"
+# Please specify how long the key should be valid.
+#      0 = key does not expire
+#   <n>  = key expires in n days
+#   <n>w = key expires in n weeks
+#   <n>m = key expires in n months
+#   <n>y = key expires in n years
+variable "expire_date" {
+  description = "GPG key expire"
   type        = string
-  default     = "amd64"
+  default     = "0"
 }
+
+#---------End GPG settings--------------
