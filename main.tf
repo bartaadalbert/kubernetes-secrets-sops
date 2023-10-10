@@ -89,9 +89,15 @@ EOF
   }
 }
 
+locals {
+  use_file_secrets = can(file(var.secrets_json_file))
+  secrets_to_use = local.use_file_secrets ? jsondecode(file(var.secrets_json_file)) : var.secrets
+}
+
 resource "local_file" "secret_enc_file" {
   depends_on = [null_resource.generate_gpg_key]
-  for_each = var.secrets
+  # for_each = var.secrets
+  for_each = local.secrets_to_use
 
   filename = "${each.key}-enc.yaml"
   content  = <<-CONTENT
@@ -112,7 +118,8 @@ CONTENT
 
 resource "null_resource" "encrypt_secrets_gpg" {
   depends_on = [null_resource.check_and_install_sops,local_file.secret_enc_file]
-  for_each = var.secrets
+  # for_each = var.secrets
+  for_each = local.secrets_to_use
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -131,6 +138,24 @@ resource "null_resource" "encrypt_secrets_gpg" {
     command = "rm -f ${path.module}/*enc.yaml"
   }
   
+}
+
+resource "null_resource" "encrypt_secrets_list_gpg" {
+  depends_on = [null_resource.check_and_install_sops]
+  # count = length(var.secret_file_list) > 0 && can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
+
+  for_each = { for idx, filename in var.secret_file_list : idx => filename }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      sops \
+      --encrypt \
+      --in-place \
+      --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
+      ${each.value}
+    EOT
+    interpreter = ["bash", "-c"]
+  }
 }
 
 

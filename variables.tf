@@ -19,6 +19,18 @@ variable "secrets" {
     }
   }
 }
+
+variable "secrets_json_file" {
+  description = "Path to the secrets JSON file"
+  type        = string
+  default     = "secrets.json"
+}
+
+variable "secret_file_list" {
+  description = "List of existing secret file names"
+  type        = list(string)
+  default     = ["secretco-enc.yaml"]
+}
 #--------End kubernetes settings----------
 
 
