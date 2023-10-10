@@ -42,32 +42,6 @@ variable "env_file_path" {
 
 
 
-
-
-#-------Begin GCP settings----------
-variable "gcp_project" {
-  description = "The GCP project ID"
-  type        = string
-  default     = "devops"
-}
-
-variable "kms_key_ring" {
-  description = "The name of the KMS key ring"
-  type        = string
-  default     = "sops-flux-1"
-}
-
-variable "kms_crypto_key" {
-  description = "The name of the KMS crypto key"
-  type        = string
-  default     = "sops-key-flux-1"
-}
-#------------END GCP GOOGLE settings--------
-
-
-
-
-
 #----------GPG settings--------
 
 variable "generate_gpg_key" {
