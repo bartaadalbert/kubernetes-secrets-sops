@@ -114,6 +114,7 @@ module "kubernetes_secrets" {
   secret_file_list      = ["secretco-enc.yaml"]
   env_file_path         = ".env"
 }
+```
 
 
 ## Contributing
