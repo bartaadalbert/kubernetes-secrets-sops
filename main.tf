@@ -125,21 +125,22 @@ resource "null_resource" "generate_secrets_json" {
   }
 }
 
+
+resource "null_resource" "wait_for_secrets_json" {
+  # depends_on = [null_resource.check_and_install_sops]
+  count = local.env_file_exists && !local.secrets_json_exists ? 1 : 0
+  provisioner "local-exec" {
+    command = "sleep 5"
+  }
+  
+}
+
+
 locals {
   secrets_json_exists = can(file(var.secrets_json_file))
   env_file_exists     = can(file(var.env_file_path))
   secrets_to_use = local.secrets_json_exists ? jsondecode(file(var.secrets_json_file)) : var.secrets
 }
-
-resource "null_resource" "wait_for_secrets_json" {
-  depends_on = [null_resource.check_and_install_sops]
-  count = local.env_file_exists && !local.secrets_json_exists ? 1 : 0
-  provisioner "local-exec" {
-    command = "sleep 3"
-  }
-  
-}
-
 
 resource "local_file" "secret_enc_file" {
   depends_on = [null_resource.generate_gpg_key]
@@ -203,5 +204,31 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
     interpreter = ["bash", "-c"]
   }
 }
+
+resource "null_resource" "concatenate_encrypted_secrets" {
+  depends_on = [null_resource.encrypt_secrets_gpg, null_resource.encrypt_secrets_list_gpg]
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      first=1
+      for file in ${path.module}/*-enc.yaml; do
+        if [ $first -eq 1 ]; then
+          cat $file >> ${path.module}/all-encrypted-secrets.yaml
+          first=0
+        else
+          echo -e "\n---\n" >> ${path.module}/all-encrypted-secrets.yaml
+          cat $file >> ${path.module}/all-encrypted-secrets.yaml
+        fi
+      done
+    EOT
+    interpreter = ["bash", "-c"]
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "rm -f ${path.module}/all-encrypted-secrets.yaml"
+  }
+}
+
 
 

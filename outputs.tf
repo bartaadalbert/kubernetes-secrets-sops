@@ -31,3 +31,14 @@ output "public_key_gpg" {
   description = "The public key ready for gpg."
   value       = data.local_file.public_key_gpg.content
 }
+
+data "local_file" "all_encrypted_secrets" {
+  depends_on = [null_resource.concatenate_encrypted_secrets]
+  filename = "${path.module}/public_key.asc"
+}
+
+output "all_encrypted_secrets" {
+  depends_on = [null_resource.concatenate_encrypted_secrets]
+  description = "All encrypted secrets data."
+  value       = data.local_file.all_encrypted_secrets.content
+}
