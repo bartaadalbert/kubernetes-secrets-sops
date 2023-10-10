@@ -116,8 +116,12 @@ resource "null_resource" "encrypt_secrets_gpg" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      sops --encrypt --in-place --encrypted-regex '^(${join("|", [for k, v in each.value : k])})$' \
-      --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` ${local_file.secret_enc_file[each.key].filename}
+      sops \
+      --encrypt \
+      --in-place \
+      --encrypted-regex '^(${join("|", [for k, v in each.value : k])})$' \
+      --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
+      ${local_file.secret_enc_file[each.key].filename}
     EOT
     interpreter = ["bash", "-c"]
   }
