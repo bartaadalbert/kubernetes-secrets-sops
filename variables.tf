@@ -31,6 +31,13 @@ variable "secret_file_list" {
   type        = list(string)
   default     = ["secretco-enc.yaml"]
 }
+
+variable "env_file_path" {
+  description = "Path to the .env file"
+  type        = string
+  default     = ".env"
+}
+
 #--------End kubernetes settings----------
 
 

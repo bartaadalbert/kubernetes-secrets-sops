@@ -89,10 +89,57 @@ EOF
   }
 }
 
-locals {
-  use_file_secrets = can(file(var.secrets_json_file))
-  secrets_to_use = local.use_file_secrets ? jsondecode(file(var.secrets_json_file)) : var.secrets
+resource "null_resource" "generate_secrets_json" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      #!/bin/bash
+
+      env_file=${var.env_file_path}
+      secrets_json=${var.secrets_json_file}
+
+      if [ ! -e "$secrets_json" ] && [ -s "$env_file" ]; then
+        echo "{" > "$secrets_json"
+        echo '  "env_secret": {' >> "$secrets_json"
+
+        # Read each line in the .env file
+        while IFS= read -r line || [[ -n "$line" ]]; do
+          # Split each line into key and value
+          key=$(echo "$line" | cut -d= -f1)
+          value=$(echo "$line" | cut -d= -f2-)
+
+          # Add the key-value pair to the "env_secret" object
+          echo "    \"$key\": \"$value\"," >> "$secrets_json"
+        done < "$env_file"
+
+        # Remove the trailing comma from the last line
+        sed -i '$ s/,$//' "$secrets_json"
+
+        # Close the "env_secret" object
+        echo "  }" >> "$secrets_json"
+
+        # Close the main JSON object
+        echo "}" >> "$secrets_json"
+      fi
+    EOT
+    interpreter = ["bash", "-c"]
+  }
 }
+
+locals {
+  secrets_json_exists = can(file(var.secrets_json_file))
+  env_file_exists     = can(file(var.env_file_path))
+  secrets_to_use = local.secrets_json_exists ? jsondecode(file(var.secrets_json_file)) : var.secrets
+}
+
+resource "null_resource" "wait_for_secrets_json" {
+  depends_on = [null_resource.check_and_install_sops]
+  count = local.env_file_exists && !local.secrets_json_exists ? 1 : 0
+  provisioner "local-exec" {
+    command = "sleep 3"
+  }
+  
+}
+
 
 resource "local_file" "secret_enc_file" {
   depends_on = [null_resource.generate_gpg_key]
@@ -142,9 +189,8 @@ resource "null_resource" "encrypt_secrets_gpg" {
 
 resource "null_resource" "encrypt_secrets_list_gpg" {
   depends_on = [null_resource.check_and_install_sops]
-  # count = length(var.secret_file_list) > 0 && can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
 
-  for_each = { for idx, filename in var.secret_file_list : idx => filename }
+  count = length(var.secret_file_list) > 0 && !can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -152,7 +198,7 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
       --encrypt \
       --in-place \
       --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
-      ${each.value}
+      ${var.secret_file_list[count.index]}
     EOT
     interpreter = ["bash", "-c"]
   }
