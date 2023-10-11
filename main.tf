@@ -162,6 +162,7 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
       sops \
       --encrypt \
       --in-place \
+      --encrypted-regex '^(data|stringData)$' \
       --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
       ${var.secret_file_list[count.index]}
     EOT
