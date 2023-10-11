@@ -4,7 +4,7 @@
 
 Before you begin, make sure you have the following prerequisites installed:
 - **Terraform**
-- **GnuPG (GPG)**
+- **GCP**
 
 ...
 
@@ -20,12 +20,11 @@ Here are the variables that you can configure in the `variables.tf` file:
 - **secret_file_list**: List of existing secret file names (default: ["secretco-enc.yaml"]).
 - **env_file_path**: Path to the .env file (default: ".env").
 
-### GPG Settings
+### GCP Settings
 
-- **generate_gpg_key**: Set to false to skip GPG key pair generation (default: true).
-- **name_real**: The GPG name (default: "devops").
-- **gpg_fingerprint**: GPG key ID (default: "my@my.local").
-- **expire_date**: GPG key expiration (default: "0").
+- **gcp_project**: GCP project id.
+- **kms_key_ring**: The KMS key ring name (default: "sops-key-ring").
+- **kms_crypto_key**: The KMS crypto key name (default: "msops-crypto-key").
 
 You can modify these variables to suit your specific use case.
 
@@ -79,8 +78,6 @@ variable "secrets" {
 After running terraform apply, you can access the generated keys and secrets using Terraform outputs. The outputs can be found in the outputs.tf file and include:
 
     - sops_version: The installed SOPS version.
-    - private_key_gpg: The private GPG key.
-    - public_key_gpg: The public GPG key.
     - all_encrypted_secrets: All encrypted secrets, concatenate.
 
 
@@ -92,7 +89,7 @@ To use this module, create a new Terraform configuration, and include the module
 
 ```hcl
 module "kubernetes_secrets" {
-  source = "https://github.com/bartaadalbert/kubernetes-secrets-sops.git?ref=main"
+  source = "https://github.com/bartaadalbert/kubernetes-secrets-sops.git?ref=gcloud"
 
   # Set your custom variables here
   namespace             = "demo"
@@ -106,10 +103,9 @@ module "kubernetes_secrets" {
       key2 = "value2"
     }
   }
-  generate_gpg_key      = true
-  name_real             = "devops"
-  gpg_fingerprint       = "my@my.local"
-  expire_date           = "0"
+  gcp_project           = var.gcp_project
+  kms_key_ring          = var.kms_key_ring
+  kms_crypto_key        = var.kms_crypto_key
   secrets_json_file     = "secrets.json"
   secret_file_list      = ["secretco-enc.yaml"]
   env_file_path         = ".env"
