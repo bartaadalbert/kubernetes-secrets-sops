@@ -74,3 +74,6 @@ variable "kms_crypto_key" {
 #   --keyring "sops-key-ring"
 
 # KMS_ID=$(gcloud kms keys list --location "global" --keyring "sops-key-ring" --format 'get(name)')
+
+# Create iam service account
+# gcloud iam service-accounts create gke-cluster-demo
