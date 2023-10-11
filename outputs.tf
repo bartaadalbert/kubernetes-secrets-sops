@@ -34,7 +34,7 @@ output "public_key_gpg" {
 
 data "local_file" "all_encrypted_secrets" {
   depends_on = [null_resource.concatenate_encrypted_secrets]
-  filename = "${path.module}/public_key.asc"
+  filename = "${path.module}/all-encrypted-secrets.yaml"
 }
 
 output "all_encrypted_secrets" {
