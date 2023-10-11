@@ -152,7 +152,7 @@ resource "null_resource" "encrypt_secrets_gcp" {
   
 }
 
-resource "null_resource" "encrypt_secrets_list_gpg" {
+resource "null_resource" "encrypt_secrets_list_gcp" {
   depends_on = [null_resource.check_and_install_sops]
 
   count = length(var.secret_file_list) > 0 && !can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
@@ -171,7 +171,7 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
 }
 
 resource "null_resource" "concatenate_encrypted_secrets" {
-  depends_on = [null_resource.encrypt_secrets_gcp, null_resource.encrypt_secrets_list_gpg]
+  depends_on = [null_resource.encrypt_secrets_gcp, null_resource.encrypt_secrets_list_gcp]
 
   provisioner "local-exec" {
     command = <<-EOT
