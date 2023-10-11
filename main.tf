@@ -130,7 +130,7 @@ CONTENT
 
 }
 
-resource "null_resource" "encrypt_secrets_gcp" {
+resource "null_resource" "encrypt_secrets_aws" {
   depends_on = [null_resource.check_and_install_sops,local_file.secret_enc_file]
   for_each = local.secrets_to_use
 
@@ -139,7 +139,7 @@ resource "null_resource" "encrypt_secrets_gcp" {
       sops \
       --encrypt \
       --encrypted-regex '^(${join("|", [for k, v in each.value : k])})$' \
-      --gcp-kms projects/${var.gcp_project}/locations/global/keyRings/${var.kms_key_ring}/cryptoKeys/${var.kms_crypto_key} \
+      --kms arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/${var.aws_key_id} \
       ${local_file.secret_enc_file[each.key].filename}
     EOT
     interpreter = ["bash", "-c"]
@@ -152,7 +152,7 @@ resource "null_resource" "encrypt_secrets_gcp" {
   
 }
 
-resource "null_resource" "encrypt_secrets_list_gpg" {
+resource "null_resource" "encrypt_secrets_list_aws" {
   depends_on = [null_resource.check_and_install_sops]
 
   count = length(var.secret_file_list) > 0 && !can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
@@ -163,7 +163,7 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
       --encrypt \
       --in-place \
       --encrypted-regex '^(data|stringData)$' \
-      --gcp-kms projects/${var.gcp_project}/locations/global/keyRings/${var.kms_key_ring}/cryptoKeys/${var.kms_crypto_key} \
+      --kms arn:aws:kms:${var.aws_region}:${var.aws_account_id}:key/${var.aws_key_id} \
       ${var.secret_file_list[count.index]}
     EOT
     interpreter = ["bash", "-c"]
@@ -171,7 +171,7 @@ resource "null_resource" "encrypt_secrets_list_gpg" {
 }
 
 resource "null_resource" "concatenate_encrypted_secrets" {
-  depends_on = [null_resource.encrypt_secrets_gcp, null_resource.encrypt_secrets_list_gpg]
+  depends_on = [null_resource.encrypt_secrets_aws, null_resource.encrypt_secrets_list_aws]
 
   provisioner "local-exec" {
     command = <<-EOT

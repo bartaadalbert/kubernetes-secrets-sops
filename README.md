@@ -4,7 +4,7 @@
 
 Before you begin, make sure you have the following prerequisites installed:
 - **Terraform**
-- **GCP**
+- **awscli**
 
 ...
 
@@ -20,11 +20,11 @@ Here are the variables that you can configure in the `variables.tf` file:
 - **secret_file_list**: List of existing secret file names (default: ["secretco-enc.yaml"]).
 - **env_file_path**: Path to the .env file (default: ".env").
 
-### GCP Settings
+### AWS Settings
 
-- **gcp_project**: GCP project id.
-- **kms_key_ring**: The KMS key ring name (default: "sops-key-ring").
-- **kms_crypto_key**: The KMS crypto key name (default: "msops-crypto-key").
+- **aws_account_id**: AWS account id.
+- **eu-central-1**: The aws region (default: "eu-central-1").
+- **aws_key_id**: The aws key id (default: "1234abcd-12ab-34cd-56ef-1234567890ab").
 
 You can modify these variables to suit your specific use case.
 
@@ -89,7 +89,7 @@ To use this module, create a new Terraform configuration, and include the module
 
 ```hcl
 module "kubernetes_secrets" {
-  source = "https://github.com/bartaadalbert/kubernetes-secrets-sops.git?ref=gcloud"
+  source = "https://github.com/bartaadalbert/kubernetes-secrets-sops.git?ref=aws"
 
   # Set your custom variables here
   namespace             = "demo"
@@ -103,9 +103,9 @@ module "kubernetes_secrets" {
       key2 = "value2"
     }
   }
-  gcp_project           = var.gcp_project
-  kms_key_ring          = var.kms_key_ring
-  kms_crypto_key        = var.kms_crypto_key
+  aws_account_id        = var.aws_account_id
+  aws_region            = var.aws_region
+  aws_key_id            = var.aws_key_id
   secrets_json_file     = "secrets.json"
   secret_file_list      = ["secretco-enc.yaml"]
   env_file_path         = ".env"

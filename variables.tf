@@ -41,39 +41,48 @@ variable "env_file_path" {
 #--------End kubernetes settings----------
 
 
-#----------GCP settinggs-----------------
-variable "gcp_project" {
-  description = "The GCP project ID"
+#----------AWS settinggs-----------------
+variable "aws_account_id" {
+  description = "The aws account ID"
   type        = string
 }
 
-variable "kms_key_ring" {
-  description = "The name of the KMS key ring"
+variable "aws_region" {
+  description = "The aws region"
   type        = string
-  default     = "sops-key-ring"
+  default     = "eu-central-1"
 }
 
-variable "kms_crypto_key" {
-  description = "The name of the KMS crypto key"
+variable "aws_key_id" {
+  description = "The AWS key id"
   type        = string
-  default     = "sops-crypto-key"
+  default     = "1234abcd-12ab-34cd-56ef-1234567890ab"
 }
 
-#----------END GCP settinggs-----------------
+#-------------END AWS settings-------------
 
-# gcloud kms keyrings create "sops-key-ring" \
-#   --location=global
+# aws kms create-key \
+#    --key-spec RSA_4096 \
+#    --key-usage ENCRYPT_DECRYPT
 
-# gcloud kms keys create "sops-crypto-key" \
-#   --location "global" \
-#   --keyring "sops-key-ring" \
-#   --purpose "encryption"
-
-# gcloud kms keys list \
-#   --location "global" \
-#   --keyring "sops-key-ring"
-
-# KMS_ID=$(gcloud kms keys list --location "global" --keyring "sops-key-ring" --format 'get(name)')
-
-# Create iam service account
-# gcloud iam service-accounts create gke-cluster-demo
+# {
+#     "KeyMetadata": {
+#         "Arn": "arn:aws:kms:us-east-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+#         "AWSAccountId": "111122223333",
+#         "CreationDate": "2021-04-05T14:04:55-07:00",
+#         "CustomerMasterKeySpec": "RSA_4096",
+#         "Description": "",
+#         "Enabled": true,
+#         "EncryptionAlgorithms": [
+#             "RSAES_OAEP_SHA_1",
+#             "RSAES_OAEP_SHA_256"
+#         ],
+#         "KeyId": "1234abcd-12ab-34cd-56ef-1234567890ab",
+#         "KeyManager": "CUSTOMER",
+#         "KeySpec": "RSA_4096",
+#         "KeyState": "Enabled",
+#         "KeyUsage": "ENCRYPT_DECRYPT",
+#         "MultiRegion": false,
+#         "Origin": "AWS_KMS"
+#     }
+# }
