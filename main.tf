@@ -57,37 +57,6 @@ resource "null_resource" "check_and_install_sops" {
   }
 }
 
-resource "null_resource" "generate_gpg_key" {
-  count = var.generate_gpg_key ? 1 : 0
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      if ! gpg --list-keys ${var.gpg_fingerprint} &> /dev/null; then
-        # Generate GPG key
-        gpg --batch --generate-key <<EOF
-          %no-protection
-          Key-Type: default
-          Subkey-Type: default
-          Name-Real: ${var.name_real}
-          Name-Email: ${var.gpg_fingerprint}
-          Expire-Date: ${replace(var.expire_date, "\"", "")}
-EOF
-      else
-        echo "GPG key with fingerprint ${var.gpg_fingerprint} already exists."
-      fi
-
-      # Save public and secret key to files
-      gpg --armor --export ${var.gpg_fingerprint} > ${path.module}/public_key.asc
-      gpg --armor --export-secret-keys ${var.gpg_fingerprint} > ${path.module}/secret_key.asc
-    EOT
-    interpreter = ["bash", "-c"]
-  }
-
-  provisioner "local-exec" {
-    when    = destroy
-    command = "rm -f ${path.module}/*.asc"
-  }
-}
 
 resource "null_resource" "generate_secrets_json" {
   provisioner "local-exec" {
@@ -127,7 +96,6 @@ resource "null_resource" "generate_secrets_json" {
 
 
 resource "null_resource" "wait_for_secrets_json" {
-  # depends_on = [null_resource.check_and_install_sops]
   count = local.env_file_exists && !local.secrets_json_exists ? 1 : 0
   provisioner "local-exec" {
     command = "sleep 5"
@@ -143,8 +111,6 @@ locals {
 }
 
 resource "local_file" "secret_enc_file" {
-  depends_on = [null_resource.generate_gpg_key]
-  # for_each = var.secrets
   for_each = local.secrets_to_use
 
   filename = "${each.key}-enc.yaml"
@@ -166,16 +132,14 @@ CONTENT
 
 resource "null_resource" "encrypt_secrets_gpg" {
   depends_on = [null_resource.check_and_install_sops,local_file.secret_enc_file]
-  # for_each = var.secrets
   for_each = local.secrets_to_use
 
   provisioner "local-exec" {
     command = <<-EOT
       sops \
       --encrypt \
-      --in-place \
+      --gcp-kms projects/${var.gcp_project}/locations/global/keyRings/${var.kms_key_ring}/cryptoKeys/${var.kms_crypto_key} \
       --encrypted-regex '^(${join("|", [for k, v in each.value : k])})$' \
-      --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
       ${local_file.secret_enc_file[each.key].filename}
     EOT
     interpreter = ["bash", "-c"]

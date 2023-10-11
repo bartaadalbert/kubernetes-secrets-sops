@@ -41,6 +41,27 @@ variable "env_file_path" {
 #--------End kubernetes settings----------
 
 
+#----------GCP settinggs-----------------
+variable "gcp_project" {
+  description = "The GCP project ID"
+  type        = string
+}
+
+variable "kms_key_ring" {
+  description = "The name of the KMS key ring"
+  type        = string
+  default     = "sops-key-ring"
+}
+
+variable "kms_crypto_key" {
+  description = "The name of the KMS crypto key"
+  type        = string
+  default     = "sops-crypto-key"
+}
+
+#----------END GCP settinggs-----------------
+
+
 
 #----------GPG settings--------
 
