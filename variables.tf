@@ -61,37 +61,16 @@ variable "kms_crypto_key" {
 
 #----------END GCP settinggs-----------------
 
+# gcloud kms keyrings create "sops-key-ring" \
+#   --location=global
 
+# gcloud kms keys create "sops-crypto-key" \
+#   --location "global" \
+#   --keyring "sops-key-ring" \
+#   --purpose "encryption"
 
-#----------GPG settings--------
+# gcloud kms keys list \
+#   --location "global" \
+#   --keyring "sops-key-ring"
 
-variable "generate_gpg_key" {
-  description = "Set to false to not generate a GPG key pair."
-  default     = true
-}
-
-variable "name_real" {
-  description = "The GPG name"
-  type        = string
-  default     = "devops"
-}
-
-variable "gpg_fingerprint" {
-  description = "GPG key id"
-  type        = string
-  default     = "my@my.local"
-}
-
-# Please specify how long the key should be valid.
-#      0 = key does not expire
-#   <n>  = key expires in n days
-#   <n>w = key expires in n weeks
-#   <n>m = key expires in n months
-#   <n>y = key expires in n years
-variable "expire_date" {
-  description = "GPG key expire"
-  type        = string
-  default     = "0"
-}
-
-#---------End GPG settings--------------
+# KMS_ID=$(gcloud kms keys list --location "global" --keyring "sops-key-ring" --format 'get(name)')
