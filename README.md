@@ -106,12 +106,12 @@ module "kubernetes_secrets" {
   namespace             = "demo"
   secrets               = {
     secret1 = {
-      key1 = "value1"
-      key2 = "value2"
-    }
-    secret2 = {
-      key1 = "value1"
-      key2 = "value2"
+      namespace = "default",
+      type      = "Opaque",
+      data      = {
+        key1 = "value1",
+        key2 = "value2"
+      }
     }
   }
   gcp_project           = var.gcp_project
