@@ -131,11 +131,19 @@ ${join("\n", [
     "  ${k}: ${base64encode(v)}"
   ])}
 CONTENT
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "null_resource" "encrypt_secrets_aws" {
   depends_on = [null_resource.check_and_install_sops,local_file.secret_enc_file]
   for_each = local.secrets_to_use
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
 
   provisioner "local-exec" {
     command = <<-EOT
@@ -158,6 +166,10 @@ resource "null_resource" "encrypt_secrets_aws" {
 resource "null_resource" "encrypt_secrets_list_aws" {
   depends_on = [null_resource.check_and_install_sops]
 
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
   count = length(var.secret_file_list) > 0 && !can(var.secret_file_list[0]) ? length(var.secret_file_list) : 0
 
   provisioner "local-exec" {
@@ -175,6 +187,10 @@ resource "null_resource" "encrypt_secrets_list_aws" {
 
 resource "null_resource" "concatenate_encrypted_secrets" {
   depends_on = [null_resource.encrypt_secrets_aws, null_resource.encrypt_secrets_list_aws]
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
 
   provisioner "local-exec" {
     command = <<-EOT
