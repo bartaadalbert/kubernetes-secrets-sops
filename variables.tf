@@ -6,16 +6,20 @@ variable "namespace" {
 }
 
 variable "secrets" {
-  description = "Map of secret names and key-value pairs"
-  type        = map(map(string))
+  description = "Map of secret names, namespaces, types and key-value pairs"
+  type        = map(object({
+    namespace = string
+    type      = string
+    data      = map(string)
+  }))
   default     = {
     secret1 = {
-      key1 = "value1"
-      key2 = "value2"
-    }
-    secret2 = {
-      key1 = "value1"
-      key2 = "value2"
+      namespace = "default",
+      type      = "Opaque",
+      data      = {
+        key1 = "value1",
+        key2 = "value2"
+      }
     }
   }
 }
