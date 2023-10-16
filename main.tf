@@ -100,6 +100,9 @@ resource "null_resource" "generate_secrets_json" {
       if [ ! -e "$secrets_json" ] && [ -s "$env_file" ]; then
         echo "{" > "$secrets_json"
         echo '  "env_secret": {' >> "$secrets_json"
+        echo '    "namespace": "${var.namespace}",' >> "$secrets_json"
+        echo '    "type": "Opaque",' >> "$secrets_json"
+        echo '    "data": {' >> "$secrets_json"
 
         # Read each line in the .env file
         while IFS= read -r line || [[ -n "$line" ]]; do
@@ -107,14 +110,15 @@ resource "null_resource" "generate_secrets_json" {
           key=$(echo "$line" | cut -d= -f1)
           value=$(echo "$line" | cut -d= -f2-)
 
-          # Add the key-value pair to the "env_secret" object
-          echo "    \"$key\": \"$value\"," >> "$secrets_json"
+          # Add the key-value pair to the "data" object
+          echo "      \"$key\": \"$value\"," >> "$secrets_json"
         done < "$env_file"
 
-        # Remove the trailing comma from the last line
+        # Remove the trailing comma from the last line in "data"
         sed -i '$ s/,$//' "$secrets_json"
 
-        # Close the "env_secret" object
+        # Close the "data" object and "env_secret" object
+        echo "    }" >> "$secrets_json"
         echo "  }" >> "$secrets_json"
 
         # Close the main JSON object
@@ -147,21 +151,20 @@ resource "local_file" "secret_enc_file" {
   # for_each = var.secrets
   for_each = local.secrets_to_use
 
-  filename = "${each.key}-enc.yaml"
+  filename = "${path.module}/${each.key}-enc.yaml"
   content  = <<-CONTENT
 apiVersion: v1
 kind: Secret
 metadata:
   name: ${each.key}
-  namespace: ${var.namespace}
-type: Opaque
+  namespace: ${each.value.namespace != "" ? each.value.namespace : var.namespace}
+type: ${each.value.type}
 data:
 ${join("\n", [
-    for k, v in each.value :
+    for k, v in each.value.data :
     "  ${k}: ${base64encode(v)}"
   ])}
 CONTENT
-
 }
 
 resource "null_resource" "encrypt_secrets_gpg" {
@@ -174,7 +177,7 @@ resource "null_resource" "encrypt_secrets_gpg" {
       sops \
       --encrypt \
       --in-place \
-      --encrypted-regex '^(${join("|", [for k, v in each.value : k])})$' \
+      --encrypted-regex '^(${join("|", [for k, v in each.value.data : k])})$' \
       --pgp `gpg --fingerprint ${var.gpg_fingerprint} | grep pub -A 1 | grep -v pub | sed s/\ //g` \
       ${local_file.secret_enc_file[each.key].filename}
     EOT

@@ -37,14 +37,21 @@ Use the secrets.json, .env file or variables secrets to define your secrets in a
 
 ```json
     {
-    "secret1": {
-        "key1": "value1",
-        "key2": "value2"
-    },
-    "secret2": {
-        "key1": "value1",
-        "key2": "value2"
-    }
+      "secret-json1": {
+        "namespace": "default",
+        "type": "Opaque",
+        "data": {
+          "key_json1": "value_json1",
+          "key_json2": "value_json2"
+        }
+      },
+      "ghcrio-image-puller": {
+        "namespace": "flux-system",
+        "type": "kubernetes.io/dockerconfigjson",
+        "data": {
+          ".dockerconfigjson": "{ \"auths\": { \"ghcr.io\": { \"username\": \"bartaadalbert\", \"password\": \"ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxx\" } } }" 
+        }
+      }
     }
 ```
 ```env
@@ -59,16 +66,20 @@ Use the secrets.json, .env file or variables secrets to define your secrets in a
 Terraform variables:
 
 variable "secrets" {
-  description = "Map of secret names and key-value pairs"
-  type        = map(map(string))
+  description = "Map of secret names, namespaces, types and key-value pairs"
+  type        = map(object({
+    namespace = string
+    type      = string
+    data      = map(string)
+  }))
   default     = {
     secret1 = {
-      key1 = "value1"
-      key2 = "value2"
-    }
-    secret2 = {
-      key1 = "value1"
-      key2 = "value2"
+      namespace = "default",
+      type      = "Opaque",
+      data      = {
+        key1 = "value1",
+        key2 = "value2"
+      }
     }
   }
 }
